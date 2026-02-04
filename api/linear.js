@@ -25,6 +25,7 @@ export default async function handler(req, res) {
             priority
             createdAt
             completedAt
+            url
             state { name }
             labels { nodes { name } }
             project { name }
@@ -62,6 +63,7 @@ export default async function handler(req, res) {
       team: issue.team?.name || null,
       createdAt: issue.createdAt,
       completedAt: issue.completedAt,
+      url: issue.url || null,
       creator: issue.creator?.email || null,
       assignee: issue.assignee?.email || null,
     }));

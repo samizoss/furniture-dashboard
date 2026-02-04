@@ -220,13 +220,29 @@ function IssueRow({ issue }) {
   const qc = q ? QUEUE_CONFIG[q] : null;
   const sc = STATUS_CONFIG[issue.status] || { color: "#64748b" };
   const pc = PRIORITY_CONFIG[issue.priority] || PRIORITY_CONFIG[0];
+
+  const handleClick = () => {
+    if (issue.url) {
+      window.open(issue.url, '_blank');
+    }
+  };
+
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
-      background: BRAND.bg, border: `1px solid ${BRAND.surfaceBorder}`, transition: "border-color 0.2s",
-    }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = BRAND.accent + "44")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = BRAND.surfaceBorder)}
+    <div
+      onClick={handleClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8,
+        background: BRAND.bg, border: `1px solid ${BRAND.surfaceBorder}`, transition: "all 0.2s",
+        cursor: issue.url ? "pointer" : "default",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = BRAND.accent + "44";
+        if (issue.url) e.currentTarget.style.background = BRAND.surfaceHover;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = BRAND.surfaceBorder;
+        e.currentTarget.style.background = BRAND.bg;
+      }}
     >
       <div style={{ width: 3, height: 30, borderRadius: 2, background: pc.color, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -268,6 +284,11 @@ function IssueRow({ issue }) {
       }}>
         {issue.status}
       </div>
+      {issue.url && (
+        <div style={{ color: BRAND.textDim, fontSize: 12, flexShrink: 0 }} title="Open in Linear">
+          ↗
+        </div>
+      )}
     </div>
   );
 }
