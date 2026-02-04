@@ -1,0 +1,42 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #0c1017;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #131a24;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1c2638;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3a50;
+}
+
+/* Input placeholder styling */
+input::placeholder {
+  color: #4a5a74;
+}
+
+/* Selection styling */
+::selection {
+  background: #38bdf844;
+  color: #e8edf5;
+}
