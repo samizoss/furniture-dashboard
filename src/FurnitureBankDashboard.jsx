@@ -285,153 +285,117 @@ function TabBtn({ active, onClick, children }) {
   );
 }
 
-// ─── URL Input Component ───
-function UrlInput({ url, setUrl, onFetch, loading, autoRefresh, setAutoRefresh, refreshInterval, setRefreshInterval }) {
+// ─── Connection Status Bar ───
+function ConnectionStatus({ loading, error, lastUpdated, autoRefresh, setAutoRefresh, refreshInterval, setRefreshInterval, onRefresh }) {
   return (
-    <Card style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ fontSize: 11, color: BRAND.textDim, fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.6px", fontWeight: 600 }}>
-          Data Source URL
-        </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 16px",
+      background: BRAND.surface,
+      border: `1px solid ${BRAND.surfaceBorder}`,
+      borderRadius: 8,
+      marginBottom: 20,
+      flexWrap: "wrap",
+      gap: 12,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {loading ? (
+          <>
+            <span style={{
+              width: 10, height: 10,
+              border: `2px solid ${BRAND.textDim}`,
+              borderTop: `2px solid ${BRAND.accent}`,
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite"
+            }} />
+            <span style={{ fontSize: 12, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif" }}>
+              Syncing with Linear...
+            </span>
+          </>
+        ) : error ? (
+          <>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: BRAND.danger }} />
+            <span style={{ fontSize: 12, color: BRAND.danger, fontFamily: "'Outfit', sans-serif" }}>
+              {error}
+            </span>
+            <button onClick={onRefresh} style={{
+              padding: "4px 10px", borderRadius: 4, border: "none",
+              background: BRAND.accent, color: BRAND.bg, fontSize: 11,
+              fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif"
+            }}>Retry</button>
+          </>
+        ) : (
+          <>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: BRAND.success, animation: autoRefresh ? "pulse 2s infinite" : "none" }} />
+            <span style={{ fontSize: 12, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif" }}>
+              Connected to Linear
+            </span>
+            {lastUpdated && (
+              <span style={{ fontSize: 10, color: BRAND.textDim, fontFamily: "'Outfit', sans-serif" }}>
+                · Updated {lastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
           <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter API URL to fetch data from..."
-            style={{
-              flex: 1,
-              minWidth: 300,
-              padding: "10px 14px",
-              borderRadius: 6,
-              border: `1px solid ${BRAND.surfaceBorder}`,
-              background: BRAND.bg,
-              color: BRAND.text,
-              fontSize: 13,
-              fontFamily: "'Outfit', sans-serif",
-              outline: "none",
-              transition: "border-color 0.2s",
-            }}
-            onFocus={(e) => (e.target.style.borderColor = BRAND.accent)}
-            onBlur={(e) => (e.target.style.borderColor = BRAND.surfaceBorder)}
-            onKeyDown={(e) => e.key === "Enter" && onFetch()}
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            style={{ accentColor: BRAND.accent, width: 14, height: 14, cursor: "pointer" }}
           />
-          <button
-            onClick={onFetch}
-            disabled={loading || !url.trim()}
+          <span style={{ fontSize: 11, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif" }}>
+            Auto-refresh
+          </span>
+        </label>
+
+        {autoRefresh && (
+          <select
+            value={refreshInterval}
+            onChange={(e) => setRefreshInterval(Number(e.target.value))}
             style={{
-              padding: "10px 20px",
-              borderRadius: 6,
-              border: "none",
-              background: loading ? BRAND.surfaceBorder : BRAND.accent,
-              color: loading ? BRAND.textMuted : BRAND.bg,
-              fontSize: 12,
-              fontWeight: 700,
-              fontFamily: "'Outfit', sans-serif",
-              cursor: loading || !url.trim() ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
+              padding: "3px 6px", borderRadius: 4,
+              border: `1px solid ${BRAND.surfaceBorder}`,
+              background: BRAND.bg, color: BRAND.text,
+              fontSize: 10, fontFamily: "'Outfit', sans-serif", cursor: "pointer",
             }}
           >
-            {loading ? (
-              <>
-                <span style={{
-                  width: 12, height: 12,
-                  border: `2px solid ${BRAND.textDim}`,
-                  borderTop: `2px solid ${BRAND.accent}`,
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite"
-                }} />
-                Fetching...
-              </>
-            ) : (
-              "Fetch Data"
-            )}
-          </button>
-        </div>
-
-        {/* Auto-refresh controls */}
-        <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              style={{ accentColor: BRAND.accent, width: 16, height: 16, cursor: "pointer" }}
-            />
-            <span style={{ fontSize: 12, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif" }}>
-              Auto-refresh
-            </span>
-          </label>
-
-          {autoRefresh && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, color: BRAND.textDim, fontFamily: "'Outfit', sans-serif" }}>Every</span>
-              <select
-                value={refreshInterval}
-                onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  border: `1px solid ${BRAND.surfaceBorder}`,
-                  background: BRAND.bg,
-                  color: BRAND.text,
-                  fontSize: 11,
-                  fontFamily: "'Outfit', sans-serif",
-                  cursor: "pointer",
-                }}
-              >
-                <option value={5}>5 seconds</option>
-                <option value={10}>10 seconds</option>
-                <option value={30}>30 seconds</option>
-                <option value={60}>1 minute</option>
-                <option value={300}>5 minutes</option>
-              </select>
-              <div style={{
-                width: 8, height: 8,
-                borderRadius: "50%",
-                background: BRAND.success,
-                animation: "pulse 2s infinite",
-              }} />
-              <span style={{ fontSize: 10, color: BRAND.success, fontFamily: "'Outfit', sans-serif" }}>Live</span>
-            </div>
-          )}
-        </div>
-
-        <div style={{ fontSize: 10, color: BRAND.textDim, fontFamily: "'Outfit', sans-serif" }}>
-          Expected format: JSON array of issues with fields: identifier, title, status, priority, labels, project, team, createdAt, completedAt
-        </div>
+            <option value={30}>30s</option>
+            <option value={60}>1m</option>
+            <option value={300}>5m</option>
+          </select>
+        )}
       </div>
-    </Card>
+    </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════
 // MAIN DASHBOARD
 // ═══════════════════════════════════════════════════════════
+const DEFAULT_API_URL = "/api/linear";
+
 export default function FurnitureBankDashboard() {
   const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start loading immediately
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [teamFilter, setTeamFilter] = useState("all");
 
   // URL input state
-  const [dataUrl, setDataUrl] = useState("/api/linear");
+  const [dataUrl, setDataUrl] = useState(DEFAULT_API_URL);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const refreshTimerRef = useRef(null);
-  const initialFetchRef = useRef(false);
 
   const fetchIssues = useCallback(async (urlToFetch) => {
-    const url = urlToFetch || dataUrl;
-    if (!url.trim()) {
-      setError("Please enter a URL");
-      return;
-    }
+    const url = urlToFetch || dataUrl || DEFAULT_API_URL;
 
     try {
       setLoading(true);
@@ -462,24 +426,8 @@ export default function FurnitureBankDashboard() {
       } else if (data.data && Array.isArray(data.data)) {
         // { data: [...] } format
         issueData = data.data;
-      } else if (data.content) {
-        // Anthropic API response format
-        const blocks = data.content || [];
-        for (const block of blocks) {
-          const text = block.text || block.content?.[0]?.text || "";
-          if (!text) continue;
-          const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-          const match = cleaned.match(/\[[\s\S]*\]/);
-          if (match) {
-            try {
-              const parsed = JSON.parse(match[0]);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                issueData = parsed;
-                break;
-              }
-            } catch (e) { /* continue */ }
-          }
-        }
+      } else if (data.error) {
+        throw new Error(data.error);
       }
 
       // Normalize issue format
@@ -498,7 +446,7 @@ export default function FurnitureBankDashboard() {
       }));
 
       if (issueData.length === 0) {
-        throw new Error("No valid issue data found in response");
+        throw new Error("No issues found");
       }
 
       setIssues(issueData);
@@ -512,15 +460,12 @@ export default function FurnitureBankDashboard() {
 
   // Auto-fetch on mount
   useEffect(() => {
-    if (!initialFetchRef.current && dataUrl.trim()) {
-      initialFetchRef.current = true;
-      fetchIssues(dataUrl);
-    }
-  }, [dataUrl, fetchIssues]);
+    fetchIssues(DEFAULT_API_URL);
+  }, []);
 
   // Auto-refresh effect
   useEffect(() => {
-    if (autoRefresh && dataUrl.trim()) {
+    if (autoRefresh && dataUrl.trim() && !loading) {
       refreshTimerRef.current = setInterval(() => {
         fetchIssues(dataUrl);
       }, refreshInterval * 1000);
@@ -530,12 +475,8 @@ export default function FurnitureBankDashboard() {
           clearInterval(refreshTimerRef.current);
         }
       };
-    } else {
-      if (refreshTimerRef.current) {
-        clearInterval(refreshTimerRef.current);
-      }
     }
-  }, [autoRefresh, refreshInterval, dataUrl, fetchIssues]);
+  }, [autoRefresh, refreshInterval, dataUrl, loading, fetchIssues]);
 
   // ─── Computed Metrics ───
   const CLOSED_STATUSES = ["Completed", "Canceled", "Duplicate"];
@@ -648,26 +589,41 @@ export default function FurnitureBankDashboard() {
           </div>
         </div>
 
-        {/* URL Input Section */}
-        <UrlInput
-          url={dataUrl}
-          setUrl={setDataUrl}
-          onFetch={() => fetchIssues()}
+        {/* Connection Status */}
+        <ConnectionStatus
           loading={loading}
+          error={error}
+          lastUpdated={lastUpdated}
           autoRefresh={autoRefresh}
           setAutoRefresh={setAutoRefresh}
           refreshInterval={refreshInterval}
           setRefreshInterval={setRefreshInterval}
+          onRefresh={() => fetchIssues()}
         />
 
         {/* Show dashboard content only when we have data */}
-        {issues.length === 0 ? (
+        {issues.length === 0 && !loading ? (
           <Card style={{ textAlign: "center", padding: 60 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
-            <div style={{ fontSize: 18, color: BRAND.text, fontWeight: 600, marginBottom: 8 }}>No Data Loaded</div>
+            <div style={{ fontSize: 18, color: BRAND.text, fontWeight: 600, marginBottom: 8 }}>
+              {error ? "Connection Issue" : "No Issues Found"}
+            </div>
             <div style={{ fontSize: 13, color: BRAND.textMuted, maxWidth: 400, margin: "0 auto" }}>
-              Enter a URL above and click "Fetch Data" to load your issues.
-              The URL should return JSON data with an array of issues.
+              {error ? "Check your Linear API key configuration in Vercel." : "Your Linear workspace has no issues to display."}
+            </div>
+          </Card>
+        ) : issues.length === 0 && loading ? (
+          <Card style={{ textAlign: "center", padding: 60 }}>
+            <div style={{
+              width: 40, height: 40,
+              border: `3px solid ${BRAND.surfaceBorder}`,
+              borderTop: `3px solid ${BRAND.accent}`,
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+              margin: "0 auto 16px"
+            }} />
+            <div style={{ fontSize: 14, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif" }}>
+              Loading issues from Linear...
             </div>
           </Card>
         ) : (
