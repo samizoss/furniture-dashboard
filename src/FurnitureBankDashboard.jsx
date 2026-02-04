@@ -420,10 +420,11 @@ export default function FurnitureBankDashboard() {
   const [teamFilter, setTeamFilter] = useState("all");
 
   // URL input state
-  const [dataUrl, setDataUrl] = useState("");
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [dataUrl, setDataUrl] = useState("/api/linear");
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(60);
   const refreshTimerRef = useRef(null);
+  const initialFetchRef = useRef(false);
 
   const fetchIssues = useCallback(async (urlToFetch) => {
     const url = urlToFetch || dataUrl;
@@ -508,6 +509,14 @@ export default function FurnitureBankDashboard() {
       setLoading(false);
     }
   }, [dataUrl]);
+
+  // Auto-fetch on mount
+  useEffect(() => {
+    if (!initialFetchRef.current && dataUrl.trim()) {
+      initialFetchRef.current = true;
+      fetchIssues(dataUrl);
+    }
+  }, [dataUrl, fetchIssues]);
 
   // Auto-refresh effect
   useEffect(() => {
