@@ -43,13 +43,14 @@ const STATUS_CONFIG = {
   Triage: { color: "#94a3b8", type: "unstarted" },
   New: { color: "#60a5fa", type: "unstarted" },
   Backlog: { color: "#64748b", type: "unstarted" },
-  Roadmap: { color: "#818cf8", type: "unstarted" },
   "In Progress": { color: "#38bdf8", type: "started" },
   Evaluating: { color: "#a78bfa", type: "started" },
   Blocked: { color: "#f87171", type: "started" },
   Completed: { color: "#34d399", type: "completed" },
   Canceled: { color: "#f87171", type: "completed" },
   Duplicate: { color: "#6b7280", type: "completed" },
+  "Parking Lot": { color: "#64748b", type: "completed" },
+  Roadmap: { color: "#818cf8", type: "completed" },
 };
 
 const PRIORITY_CONFIG = {
@@ -501,7 +502,7 @@ export default function FurnitureBankDashboard() {
   }, [autoRefresh, refreshInterval, dataUrl, loading, fetchIssues]);
 
   // ─── Computed Metrics ───
-  const CLOSED_STATUSES = ["Completed", "Canceled", "Duplicate"];
+  const CLOSED_STATUSES = ["Completed", "Canceled", "Duplicate", "Parking Lot", "Roadmap"];
   const filteredByTeam = teamFilter === "all" ? issues : issues.filter((i) => i.team === teamFilter);
   const active = filteredByTeam.filter((i) => !CLOSED_STATUSES.includes(i.status));
   const completed = filteredByTeam.filter((i) => i.status === "Completed");
