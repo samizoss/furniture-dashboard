@@ -462,6 +462,7 @@ export default function FurnitureBankDashboard() {
         team: i.team?.name || i.team || null,
         createdAt: i.createdAt || i.created_at || i.created || new Date().toISOString(),
         completedAt: i.completedAt || i.completed_at || i.completed || null,
+        url: i.url || null,
         creator: i.creator?.email || i.creator || null,
         assignee: i.assignee?.email || i.assignee || null,
       }));
