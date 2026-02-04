@@ -463,6 +463,7 @@ export default function FurnitureBankDashboard() {
         team: i.team?.name || i.team || null,
         createdAt: i.createdAt || i.created_at || i.created || new Date().toISOString(),
         completedAt: i.completedAt || i.completed_at || i.completed || null,
+        updatedAt: i.updatedAt || i.updated_at || null,
         url: i.url || null,
         creator: i.creator?.email || i.creator || null,
         assignee: i.assignee?.email || i.assignee || null,
@@ -540,10 +541,11 @@ export default function FurnitureBankDashboard() {
   const lastME = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
   const openedThis = filteredByTeam.filter((i) => new Date(i.createdAt) >= thisMS).length;
-  const closedThis = closed.filter((i) => i.completedAt && new Date(i.completedAt) >= thisMS).length;
+  const getClosedDate = (i) => i.completedAt || i.updatedAt;
+  const closedThis = closed.filter((i) => { const dt = getClosedDate(i); return dt && new Date(dt) >= thisMS; }).length;
   const completedThis = completed.filter((i) => i.completedAt && new Date(i.completedAt) >= thisMS).length;
   const openedLast = filteredByTeam.filter((i) => { const d = new Date(i.createdAt); return d >= lastMS && d <= lastME; }).length;
-  const closedLast = closed.filter((i) => { if (!i.completedAt) return false; const d = new Date(i.completedAt); return d >= lastMS && d <= lastME; }).length;
+  const closedLast = closed.filter((i) => { const dt = getClosedDate(i); if (!dt) return false; const d = new Date(dt); return d >= lastMS && d <= lastME; }).length;
   const completedLast = completed.filter((i) => { if (!i.completedAt) return false; const d = new Date(i.completedAt); return d >= lastMS && d <= lastME; }).length;
 
   const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -687,7 +689,7 @@ export default function FurnitureBankDashboard() {
             <SH icon="📅">This Month</SH>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               <StatCard label="Opened" value={openedThis} color={BRAND.accent} />
-              <StatCard label="Closed" value={closedThis} sub="Completed + Canceled + Duplicate" color={BRAND.orange} />
+              <StatCard label="Closed" value={closedThis} sub="All closed statuses" color={BRAND.orange} />
               <StatCard label="Completed" value={completedThis} sub="Done" color={BRAND.success} />
             </div>
 
