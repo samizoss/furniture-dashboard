@@ -15,10 +15,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Simplified query to avoid complexity limits
     const query = `
-      query {
-        issues(first: 100, orderBy: updatedAt) {
+      query($cursor: String) {
+        issues(first: 100, after: $cursor, orderBy: updatedAt) {
+          pageInfo { hasNextPage endCursor }
           nodes {
             identifier
             title
@@ -38,37 +38,47 @@ export default async function handler(req, res) {
       }
     `;
 
-    const response = await fetch('https://api.linear.app/graphql', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': LINEAR_API_KEY,
-      },
-      body: JSON.stringify({ query }),
-    });
+    let allIssues = [];
+    let hasNextPage = true;
+    let cursor = null;
 
-    const data = await response.json();
+    while (hasNextPage) {
+      const response = await fetch('https://api.linear.app/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': LINEAR_API_KEY,
+        },
+        body: JSON.stringify({ query, variables: { cursor } }),
+      });
 
-    if (data.errors) {
-      console.error('Linear API errors:', data.errors);
-      return res.status(500).json({ error: 'Linear API error', details: data.errors });
+      const data = await response.json();
+
+      if (data.errors) {
+        console.error('Linear API errors:', data.errors);
+        return res.status(500).json({ error: 'Linear API error', details: data.errors });
+      }
+
+      const nodes = data.data?.issues?.nodes || [];
+      allIssues.push(...nodes.map(issue => ({
+        identifier: issue.identifier,
+        title: issue.title,
+        status: issue.state?.name || 'Unknown',
+        priority: issue.priority || 0,
+        labels: (issue.labels?.nodes || []).map(l => l.name),
+        project: issue.project?.name || null,
+        team: issue.team?.name || null,
+        createdAt: issue.createdAt,
+        completedAt: issue.completedAt,
+        updatedAt: issue.updatedAt,
+        url: issue.url || null,
+        creator: issue.creator?.email || null,
+        assignee: issue.assignee?.email || null,
+      })));
+
+      hasNextPage = data.data?.issues?.pageInfo?.hasNextPage || false;
+      cursor = data.data?.issues?.pageInfo?.endCursor || null;
     }
-
-    const allIssues = (data.data?.issues?.nodes || []).map(issue => ({
-      identifier: issue.identifier,
-      title: issue.title,
-      status: issue.state?.name || 'Unknown',
-      priority: issue.priority || 0,
-      labels: (issue.labels?.nodes || []).map(l => l.name),
-      project: issue.project?.name || null,
-      team: issue.team?.name || null,
-      createdAt: issue.createdAt,
-      completedAt: issue.completedAt,
-      updatedAt: issue.updatedAt,
-      url: issue.url || null,
-      creator: issue.creator?.email || null,
-      assignee: issue.assignee?.email || null,
-    }));
 
     return res.status(200).json(allIssues);
   } catch (error) {

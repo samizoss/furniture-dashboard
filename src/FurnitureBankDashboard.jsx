@@ -34,10 +34,11 @@ const DEPT_CONFIG = {
   "Client Services": { color: "#fbbf24", short: "Client Services" },
   "Sales": { color: "#fb923c", short: "Sales" },
   "Multi-Department Impact": { color: "#e879f9", short: "Multi-Dept" },
+  "External Support": { color: "#22d3ee", short: "External Support" },
   none: { color: "#475569", short: "Uncategorized" },
 };
 
-const REQUEST_TYPES = ["Problem", "Feature Request", "Agenda Item", "To-Do", "Roadmap Item", "Question", "Report", "Bug", "Improvement", "Data Quality Goal", "Technology Evaluation"];
+const REQUEST_TYPES = ["Problem", "Feature Request", "Agenda Item", "To-Do", "Roadmap Item", "Question", "Report", "Bug", "Improvement", "Data Quality Goal", "Technology Evaluation", "Potential KPI"];
 
 const STATUS_CONFIG = {
   Triage: { color: "#94a3b8", type: "unstarted" },
@@ -45,7 +46,9 @@ const STATUS_CONFIG = {
   Backlog: { color: "#64748b", type: "unstarted" },
   "In Progress": { color: "#38bdf8", type: "started" },
   Evaluating: { color: "#a78bfa", type: "started" },
+  Reviewing: { color: "#a78bfa", type: "started" },
   Blocked: { color: "#f87171", type: "started" },
+  Done: { color: "#34d399", type: "completed" },
   Completed: { color: "#34d399", type: "completed" },
   Canceled: { color: "#f87171", type: "completed" },
   Duplicate: { color: "#6b7280", type: "completed" },
@@ -67,6 +70,7 @@ const PROJECT_COLORS = [
 ];
 
 const TEAM_NAMES = {
+  "Digital Guidance": "DG",
   "Guidance Team": "DG",
   "Center Of Excellence": "COE",
 };
@@ -503,10 +507,10 @@ export default function FurnitureBankDashboard() {
   }, [autoRefresh, refreshInterval, dataUrl, loading, fetchIssues]);
 
   // ─── Computed Metrics ───
-  const CLOSED_STATUSES = ["Completed", "Canceled", "Duplicate", "Parking Lot", "Roadmap"];
+  const CLOSED_STATUSES = ["Done", "Completed", "Canceled", "Duplicate", "Parking Lot", "Roadmap"];
   const filteredByTeam = teamFilter === "all" ? issues : issues.filter((i) => i.team === teamFilter);
   const active = filteredByTeam.filter((i) => !CLOSED_STATUSES.includes(i.status));
-  const completed = filteredByTeam.filter((i) => i.status === "Completed");
+  const completed = filteredByTeam.filter((i) => i.status === "Done" || i.status === "Completed");
   const closed = filteredByTeam.filter((i) => CLOSED_STATUSES.includes(i.status));
 
   const queueKeys = Object.keys(QUEUE_CONFIG).filter((k) => k !== "triage");
