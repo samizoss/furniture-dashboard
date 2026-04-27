@@ -83,6 +83,26 @@ const USER_DISPLAY = {
   "cto@furniturebank.org": "CTO",
 };
 
+// Returns a stable identifier for grouping issues by creator. Falls back
+// across email → name → displayName, so service accounts (no email) and
+// external integrations still get distinct buckets when possible.
+const creatorKey = (c) => {
+  if (!c) return "unknown";
+  return c.email || c.name || c.displayName || "unknown";
+};
+
+// Returns the legend/drill label for a creator. Curated USER_DISPLAY wins
+// for known staff, then Linear's name/displayName, then the full email,
+// then "Unknown".
+const creatorLabel = (c) => {
+  if (!c) return "Unknown";
+  if (c.email && USER_DISPLAY[c.email]) return USER_DISPLAY[c.email];
+  if (c.name) return c.name;
+  if (c.displayName) return c.displayName;
+  if (c.email) return c.email;
+  return "Unknown";
+};
+
 const CLOSED_STATUSES = ["Done", "Merged", "Cancelled", "Canceled", "Parking Lot", "Roadmap"];
 
 // ─── Chart Tooltip ───
@@ -628,7 +648,11 @@ export default function FurnitureBankDashboard() {
         completedAt: i.completedAt || i.completed_at || i.completed || null,
         updatedAt: i.updatedAt || i.updated_at || null,
         url: i.url || null,
-        creator: i.creator?.email || i.creator || null,
+        creator: i.creator
+          ? (typeof i.creator === "string"
+              ? { email: i.creator, name: null, displayName: null }
+              : { email: i.creator.email || null, name: i.creator.name || null, displayName: i.creator.displayName || null })
+          : null,
         assignee: i.assignee?.email || i.assignee || null,
       }));
 
@@ -753,7 +777,12 @@ export default function FurnitureBankDashboard() {
   });
 
   const creatorCounts = {};
-  filteredByTeam.forEach((i) => { const c = i.creator || "unknown"; creatorCounts[c] = (creatorCounts[c] || 0) + 1; });
+  const creatorObjects = {};
+  filteredByTeam.forEach((i) => {
+    const key = creatorKey(i.creator);
+    creatorCounts[key] = (creatorCounts[key] || 0) + 1;
+    if (!creatorObjects[key]) creatorObjects[key] = i.creator;
+  });
 
   const priCounts = {};
   active.forEach((i) => { const p = i.priority ?? 0; priCounts[p] = (priCounts[p] || 0) + 1; });
@@ -807,7 +836,10 @@ export default function FurnitureBankDashboard() {
     label: DEPT_CONFIG[k].short, value: v, color: DEPT_CONFIG[k].color, filterKey: k,
   }));
   const creatorDonut = Object.entries(creatorCounts).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({
-    label: USER_DISPLAY[k] || k.split("@")[0], value: v, color: PROJECT_COLORS[i % PROJECT_COLORS.length], filterKey: k,
+    label: creatorLabel(creatorObjects[k]),
+    value: v,
+    color: PROJECT_COLORS[i % PROJECT_COLORS.length],
+    filterKey: k,
   }));
 
   const queueBar = Object.entries(queueCounts).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
@@ -833,7 +865,7 @@ export default function FurnitureBankDashboard() {
   };
 
   const drillCreator = (label, key) => {
-    const items = filteredByTeam.filter((i) => (i.creator || "unknown") === key);
+    const items = filteredByTeam.filter((i) => creatorKey(i.creator) === key);
     openDrillDown(`Requests by ${label}`, items);
   };
 
