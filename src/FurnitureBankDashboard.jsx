@@ -1116,10 +1116,13 @@ export default function FurnitureBankDashboard() {
             <SH icon="📅">This Month</SH>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               <StatCard label="Opened" value={openedThis} color={BRAND.accent}
+                info="Issues created since the 1st of this month, regardless of current status."
                 onClick={() => openDrillDown("Opened This Month", filteredByTeam.filter((i) => new Date(i.createdAt) >= thisMS))} />
               <StatCard label="Closed" value={closedThis} sub="All closed statuses" color={BRAND.orange}
+                info="Issues moved to any closed status (Done, Merged, Cancelled, Parking Lot, Roadmap) since the 1st of this month, based on when the issue was moved to a closed status."
                 onClick={() => openDrillDown("Closed This Month", closed.filter((i) => { const dt = getClosedDate(i); return dt && new Date(dt) >= thisMS; }))} />
               <StatCard label="Completed" value={completedThis} sub="Done" color={BRAND.success}
+                info="Issues marked Done or Merged since the 1st of this month. A subset of Closed."
                 onClick={() => openDrillDown("Completed This Month (Done)", doneOnly.filter((i) => i.completedAt && new Date(i.completedAt) >= thisMS))} />
             </div>
 
@@ -1253,10 +1256,13 @@ export default function FurnitureBankDashboard() {
             <SH icon="🗓️">Last Month</SH>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               <StatCard label="Opened" value={openedLast} color={BRAND.accent} small
+                info="Issues created during last month (the 1st through the last day)."
                 onClick={() => openDrillDown("Opened Last Month", filteredByTeam.filter((i) => { const d = new Date(i.createdAt); return d >= lastMS && d <= lastME; }))} />
               <StatCard label="Closed" value={closedLast} color={BRAND.orange} small
+                info="Issues moved to any closed status (Done, Merged, Cancelled, Parking Lot, Roadmap) during last month, based on when the issue was moved to a closed status."
                 onClick={() => openDrillDown("Closed Last Month", closed.filter((i) => { const dt = getClosedDate(i); if (!dt) return false; const d = new Date(dt); return d >= lastMS && d <= lastME; }))} />
               <StatCard label="Completed" value={completedLast} color={BRAND.success} small
+                info="Issues marked Done or Merged during last month. A subset of Closed."
                 onClick={() => openDrillDown("Completed Last Month (Done)", doneOnly.filter((i) => { if (!i.completedAt) return false; const d = new Date(i.completedAt); return d >= lastMS && d <= lastME; }))} />
             </div>
 
