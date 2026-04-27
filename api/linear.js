@@ -31,7 +31,7 @@ export default async function handler(req, res) {
             labels { nodes { name } }
             project { name }
             team { name }
-            creator { email }
+            creator { name displayName email }
             assignee { email }
           }
         }
@@ -72,7 +72,13 @@ export default async function handler(req, res) {
         completedAt: issue.completedAt,
         updatedAt: issue.updatedAt,
         url: issue.url || null,
-        creator: issue.creator?.email || null,
+        creator: issue.creator
+          ? {
+              name: issue.creator.name || null,
+              displayName: issue.creator.displayName || null,
+              email: issue.creator.email || null,
+            }
+          : null,
         assignee: issue.assignee?.email || null,
       })));
 
