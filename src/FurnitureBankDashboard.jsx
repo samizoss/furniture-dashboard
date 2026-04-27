@@ -103,6 +103,11 @@ const creatorLabel = (c) => {
   return "Unknown";
 };
 
+// Set true when the URL includes ?debug=1. Used to surface diagnostic
+// panels that should not appear in normal use.
+const DEBUG_MODE = typeof window !== "undefined"
+  && new URLSearchParams(window.location.search).get("debug") === "1";
+
 const CLOSED_STATUSES = ["Done", "Merged", "Cancelled", "Canceled", "Parking Lot", "Roadmap"];
 
 // ─── Chart Tooltip ───
@@ -1003,6 +1008,67 @@ export default function FurnitureBankDashboard() {
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <DonutChart data={creatorDonut} total={filteredByTeam.length} label="Total" onSegmentClick={drillCreator} />
                 </div>
+                {DEBUG_MODE && (() => {
+                  const nullCount = filteredByTeam.filter((i) => i.creator === null).length;
+                  const noEmailCount = filteredByTeam.filter((i) => i.creator !== null && !i.creator.email).length;
+                  const distinctKeys = Object.keys(creatorCounts).filter((k) => k !== "unknown");
+                  const rows = Object.entries(creatorCounts).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+                    const c = creatorObjects[k];
+                    return {
+                      label: creatorLabel(c),
+                      email: c?.email || "—",
+                      name: c?.name || "—",
+                      count: v,
+                    };
+                  });
+                  return (
+                    <div data-export-exclude="true" style={{
+                      marginTop: 16,
+                      padding: "12px 14px",
+                      borderRadius: 8,
+                      background: `${BRAND.warning}0a`,
+                      border: `1px solid ${BRAND.warning}33`,
+                      borderLeft: `3px solid ${BRAND.warning}`,
+                      position: "relative",
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      <div style={{
+                        position: "absolute", top: 8, right: 12,
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
+                        color: BRAND.warning, textTransform: "uppercase",
+                      }}>Debug</div>
+                      <div style={{ fontSize: 11, color: BRAND.text, fontWeight: 600, marginBottom: 8 }}>Creator data quality</div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 4 }}>
+                        Null creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{nullCount}</span> (likely integrations, deleted users, or imports)
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 4 }}>
+                        No-email creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{noEmailCount}</span> (creator exists but has no email)
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 10 }}>
+                        Distinct creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{distinctKeys.length}</span>
+                      </div>
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "1.4fr 1.6fr 1.2fr auto",
+                        gap: "4px 12px",
+                        fontSize: 10,
+                      }}>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Label</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Email</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Linear name</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, textAlign: "right" }}>Count</div>
+                        {rows.map((r, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ color: BRAND.text }}>{r.label}</div>
+                            <div style={{ color: BRAND.textMuted }}>{r.email}</div>
+                            <div style={{ color: BRAND.textMuted }}>{r.name}</div>
+                            <div style={{ color: BRAND.text, fontWeight: 600, textAlign: "right" }}>{r.count}</div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
 
