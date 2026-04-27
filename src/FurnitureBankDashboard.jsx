@@ -288,7 +288,8 @@ function MonthlyBars({ data, stacked }) {
 }
 
 // ─── Stat Card ───
-function StatCard({ label, value, sub, color, small, onClick }) {
+function StatCard({ label, value, sub, color, small, onClick, info }) {
+  const [showInfo, setShowInfo] = useState(false);
   return (
     <div
       onClick={onClick}
@@ -306,7 +307,36 @@ function StatCard({ label, value, sub, color, small, onClick }) {
       onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.borderColor = BRAND.surfaceBorder; e.currentTarget.style.background = BRAND.surface; } }}
     >
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color || BRAND.accent, opacity: 0.7 }} />
-      <div style={{ fontSize: "10px", color: BRAND.textDim, fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 6, textAlign: "center", fontWeight: 600 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 6 }}>
+        <div style={{ fontSize: "10px", color: BRAND.textDim, fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.8px", textAlign: "center", fontWeight: 600 }}>{label}</div>
+        {info && (
+          <span
+            onClick={(e) => { e.stopPropagation(); setShowInfo((v) => !v); }}
+            style={{
+              cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 13, height: 13, borderRadius: "50%", fontSize: 9, fontWeight: 700,
+              background: showInfo ? BRAND.accent : BRAND.surfaceBorder,
+              color: showInfo ? "#fff" : BRAND.textMuted,
+              transition: "all 0.2s", flexShrink: 0, lineHeight: 1, textTransform: "none",
+              fontFamily: "'Outfit', sans-serif",
+            }}
+            onMouseEnter={(e) => { if (!showInfo) e.currentTarget.style.background = BRAND.accent + "66"; }}
+            onMouseLeave={(e) => { if (!showInfo) e.currentTarget.style.background = BRAND.surfaceBorder; }}
+          >i</span>
+        )}
+      </div>
+      {showInfo && info && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            fontSize: 10, fontWeight: 400, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif",
+            padding: "8px 10px", marginBottom: 8, borderRadius: 6, lineHeight: 1.5,
+            background: `${BRAND.accent}0a`, border: `1px solid ${BRAND.accent}22`,
+            borderLeft: `3px solid ${BRAND.accent}`,
+            textAlign: "left", width: "100%",
+          }}
+        >{info}</div>
+      )}
       <div style={{ fontSize: small ? "32px" : "38px", fontWeight: 800, color: BRAND.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: "9px", color: BRAND.textDim, marginTop: 4, fontFamily: "'Outfit', sans-serif" }}>{sub}</div>}
       {onClick && <div style={{ fontSize: "8px", color: BRAND.textDim, marginTop: 4, fontFamily: "'Outfit', sans-serif", opacity: 0.6 }}>Click to view</div>}
