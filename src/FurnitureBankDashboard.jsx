@@ -26,6 +26,15 @@ const QUEUE_CONFIG = {
   triage: { color: "#64748b", short: "Triage (Unqueued)", icon: "○" },
 };
 
+const QUEUE_INFO = {
+  "Guidance Queue": "Open issues currently labeled with the Guidance Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Support Queue": "Open issues currently labeled with the Support Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "COE Queue": "Open issues currently labeled with the COE Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Admin Queue": "Open issues currently labeled with the Admin Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Sorting Hat": "Open issues currently labeled with the Sorting Hat label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  triage: "Open issues with no queue label assigned yet. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+};
+
 const DEPT_CONFIG = {
   "Leadership": { color: "#f472b6", short: "Leadership" },
   "Operations": { color: "#38bdf8", short: "Operations" },
@@ -82,6 +91,31 @@ const USER_DISPLAY = {
   "daniel.lombardi@furniturebank.org": "Daniel Lombardi",
   "cto@furniturebank.org": "CTO",
 };
+
+// Returns a stable identifier for grouping issues by creator. Falls back
+// across email → name → displayName, so service accounts (no email) and
+// external integrations still get distinct buckets when possible.
+const creatorKey = (c) => {
+  if (!c) return "unknown";
+  return c.email || c.name || c.displayName || "unknown";
+};
+
+// Returns the legend/drill label for a creator. Curated USER_DISPLAY wins
+// for known staff, then Linear's name/displayName, then the full email,
+// then "Unknown".
+const creatorLabel = (c) => {
+  if (!c) return "Unknown";
+  if (c.email && USER_DISPLAY[c.email]) return USER_DISPLAY[c.email];
+  if (c.name) return c.name;
+  if (c.displayName) return c.displayName;
+  if (c.email) return c.email;
+  return "Unknown";
+};
+
+// Set true when the URL includes ?debug=1. Used to surface diagnostic
+// panels that should not appear in normal use.
+const DEBUG_MODE = typeof window !== "undefined"
+  && new URLSearchParams(window.location.search).get("debug") === "1";
 
 const CLOSED_STATUSES = ["Done", "Merged", "Cancelled", "Canceled", "Parking Lot", "Roadmap"];
 
@@ -263,7 +297,8 @@ function MonthlyBars({ data, stacked }) {
 }
 
 // ─── Stat Card ───
-function StatCard({ label, value, sub, color, small, onClick }) {
+function StatCard({ label, value, sub, color, small, onClick, info }) {
+  const [showInfo, setShowInfo] = useState(false);
   return (
     <div
       onClick={onClick}
@@ -281,7 +316,36 @@ function StatCard({ label, value, sub, color, small, onClick }) {
       onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.borderColor = BRAND.surfaceBorder; e.currentTarget.style.background = BRAND.surface; } }}
     >
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color || BRAND.accent, opacity: 0.7 }} />
-      <div style={{ fontSize: "10px", color: BRAND.textDim, fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 6, textAlign: "center", fontWeight: 600 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginBottom: 6 }}>
+        <div style={{ fontSize: "10px", color: BRAND.textDim, fontFamily: "'Outfit', sans-serif", textTransform: "uppercase", letterSpacing: "0.8px", textAlign: "center", fontWeight: 600 }}>{label}</div>
+        {info && (
+          <span
+            onClick={(e) => { e.stopPropagation(); setShowInfo((v) => !v); }}
+            style={{
+              cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+              width: 13, height: 13, borderRadius: "50%", fontSize: 9, fontWeight: 700,
+              background: showInfo ? BRAND.accent : BRAND.surfaceBorder,
+              color: showInfo ? "#fff" : BRAND.textMuted,
+              transition: "all 0.2s", flexShrink: 0, lineHeight: 1, textTransform: "none",
+              fontFamily: "'Outfit', sans-serif",
+            }}
+            onMouseEnter={(e) => { if (!showInfo) e.currentTarget.style.background = BRAND.accent + "66"; }}
+            onMouseLeave={(e) => { if (!showInfo) e.currentTarget.style.background = BRAND.surfaceBorder; }}
+          >i</span>
+        )}
+      </div>
+      {showInfo && info && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            fontSize: 10, fontWeight: 400, color: BRAND.textMuted, fontFamily: "'Outfit', sans-serif",
+            padding: "8px 10px", marginBottom: 8, borderRadius: 6, lineHeight: 1.5,
+            background: `${BRAND.accent}0a`, border: `1px solid ${BRAND.accent}22`,
+            borderLeft: `3px solid ${BRAND.accent}`,
+            textAlign: "left", width: "100%",
+          }}
+        >{info}</div>
+      )}
       <div style={{ fontSize: small ? "32px" : "38px", fontWeight: 800, color: BRAND.text, fontFamily: "'Outfit', sans-serif", lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: "9px", color: BRAND.textDim, marginTop: 4, fontFamily: "'Outfit', sans-serif" }}>{sub}</div>}
       {onClick && <div style={{ fontSize: "8px", color: BRAND.textDim, marginTop: 4, fontFamily: "'Outfit', sans-serif", opacity: 0.6 }}>Click to view</div>}
@@ -628,7 +692,11 @@ export default function FurnitureBankDashboard() {
         completedAt: i.completedAt || i.completed_at || i.completed || null,
         updatedAt: i.updatedAt || i.updated_at || null,
         url: i.url || null,
-        creator: i.creator?.email || i.creator || null,
+        creator: i.creator
+          ? (typeof i.creator === "string"
+              ? { email: i.creator, name: null, displayName: null }
+              : { email: i.creator.email || null, name: i.creator.name || null, displayName: i.creator.displayName || null })
+          : null,
         assignee: i.assignee?.email || i.assignee || null,
       }));
 
@@ -753,7 +821,12 @@ export default function FurnitureBankDashboard() {
   });
 
   const creatorCounts = {};
-  filteredByTeam.forEach((i) => { const c = i.creator || "unknown"; creatorCounts[c] = (creatorCounts[c] || 0) + 1; });
+  const creatorObjects = {};
+  filteredByTeam.forEach((i) => {
+    const key = creatorKey(i.creator);
+    creatorCounts[key] = (creatorCounts[key] || 0) + 1;
+    if (!creatorObjects[key]) creatorObjects[key] = i.creator;
+  });
 
   const priCounts = {};
   active.forEach((i) => { const p = i.priority ?? 0; priCounts[p] = (priCounts[p] || 0) + 1; });
@@ -807,7 +880,10 @@ export default function FurnitureBankDashboard() {
     label: DEPT_CONFIG[k].short, value: v, color: DEPT_CONFIG[k].color, filterKey: k,
   }));
   const creatorDonut = Object.entries(creatorCounts).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({
-    label: USER_DISPLAY[k] || k.split("@")[0], value: v, color: PROJECT_COLORS[i % PROJECT_COLORS.length], filterKey: k,
+    label: creatorLabel(creatorObjects[k]),
+    value: v,
+    color: PROJECT_COLORS[i % PROJECT_COLORS.length],
+    filterKey: k,
   }));
 
   const queueBar = Object.entries(queueCounts).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({
@@ -833,7 +909,7 @@ export default function FurnitureBankDashboard() {
   };
 
   const drillCreator = (label, key) => {
-    const items = filteredByTeam.filter((i) => (i.creator || "unknown") === key);
+    const items = filteredByTeam.filter((i) => creatorKey(i.creator) === key);
     openDrillDown(`Requests by ${label}`, items);
   };
 
@@ -955,6 +1031,7 @@ export default function FurnitureBankDashboard() {
                   color={QUEUE_CONFIG[key]?.color}
                   small
                   onClick={() => drillQueue(QUEUE_CONFIG[key]?.short || key, key)}
+                  info={QUEUE_INFO[key]}
                 />
               ))}
             </div>
@@ -971,6 +1048,67 @@ export default function FurnitureBankDashboard() {
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <DonutChart data={creatorDonut} total={filteredByTeam.length} label="Total" onSegmentClick={drillCreator} />
                 </div>
+                {DEBUG_MODE && (() => {
+                  const nullCount = filteredByTeam.filter((i) => i.creator === null).length;
+                  const noEmailCount = filteredByTeam.filter((i) => i.creator !== null && !i.creator.email).length;
+                  const distinctKeys = Object.keys(creatorCounts).filter((k) => k !== "unknown");
+                  const rows = Object.entries(creatorCounts).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+                    const c = creatorObjects[k];
+                    return {
+                      label: creatorLabel(c),
+                      email: c?.email || "—",
+                      name: c?.name || "—",
+                      count: v,
+                    };
+                  });
+                  return (
+                    <div data-export-exclude="true" style={{
+                      marginTop: 16,
+                      padding: "12px 14px",
+                      borderRadius: 8,
+                      background: `${BRAND.warning}0a`,
+                      border: `1px solid ${BRAND.warning}33`,
+                      borderLeft: `3px solid ${BRAND.warning}`,
+                      position: "relative",
+                      fontFamily: "'Outfit', sans-serif",
+                    }}>
+                      <div style={{
+                        position: "absolute", top: 8, right: 12,
+                        fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
+                        color: BRAND.warning, textTransform: "uppercase",
+                      }}>Debug</div>
+                      <div style={{ fontSize: 11, color: BRAND.text, fontWeight: 600, marginBottom: 8 }}>Creator data quality</div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 4 }}>
+                        Null creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{nullCount}</span> (likely integrations, deleted users, or imports)
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 4 }}>
+                        No-email creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{noEmailCount}</span> (creator exists but has no email)
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.textMuted, marginBottom: 10 }}>
+                        Distinct creators: <span style={{ color: BRAND.text, fontWeight: 600 }}>{distinctKeys.length}</span>
+                      </div>
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "1.4fr 1.6fr 1.2fr auto",
+                        gap: "4px 12px",
+                        fontSize: 10,
+                      }}>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Label</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Email</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>Linear name</div>
+                        <div style={{ color: BRAND.textDim, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, textAlign: "right" }}>Count</div>
+                        {rows.map((r, i) => (
+                          <React.Fragment key={i}>
+                            <div style={{ color: BRAND.text }}>{r.label}</div>
+                            <div style={{ color: BRAND.textMuted }}>{r.email}</div>
+                            <div style={{ color: BRAND.textMuted }}>{r.name}</div>
+                            <div style={{ color: BRAND.text, fontWeight: 600, textAlign: "right" }}>{r.count}</div>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
 
@@ -978,10 +1116,13 @@ export default function FurnitureBankDashboard() {
             <SH icon="📅">This Month</SH>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               <StatCard label="Opened" value={openedThis} color={BRAND.accent}
+                info="Issues created since the 1st of this month, regardless of current status."
                 onClick={() => openDrillDown("Opened This Month", filteredByTeam.filter((i) => new Date(i.createdAt) >= thisMS))} />
               <StatCard label="Closed" value={closedThis} sub="All closed statuses" color={BRAND.orange}
+                info="Issues moved to any closed status (Done, Merged, Cancelled, Parking Lot, Roadmap) since the 1st of this month, based on when the issue was moved to a closed status."
                 onClick={() => openDrillDown("Closed This Month", closed.filter((i) => { const dt = getClosedDate(i); return dt && new Date(dt) >= thisMS; }))} />
               <StatCard label="Completed" value={completedThis} sub="Done" color={BRAND.success}
+                info="Issues marked Done or Merged since the 1st of this month. A subset of Closed."
                 onClick={() => openDrillDown("Completed This Month (Done)", doneOnly.filter((i) => i.completedAt && new Date(i.completedAt) >= thisMS))} />
             </div>
 
@@ -1115,10 +1256,13 @@ export default function FurnitureBankDashboard() {
             <SH icon="🗓️">Last Month</SH>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               <StatCard label="Opened" value={openedLast} color={BRAND.accent} small
+                info="Issues created during last month (the 1st through the last day)."
                 onClick={() => openDrillDown("Opened Last Month", filteredByTeam.filter((i) => { const d = new Date(i.createdAt); return d >= lastMS && d <= lastME; }))} />
               <StatCard label="Closed" value={closedLast} color={BRAND.orange} small
+                info="Issues moved to any closed status (Done, Merged, Cancelled, Parking Lot, Roadmap) during last month, based on when the issue was moved to a closed status."
                 onClick={() => openDrillDown("Closed Last Month", closed.filter((i) => { const dt = getClosedDate(i); if (!dt) return false; const d = new Date(dt); return d >= lastMS && d <= lastME; }))} />
               <StatCard label="Completed" value={completedLast} color={BRAND.success} small
+                info="Issues marked Done or Merged during last month. A subset of Closed."
                 onClick={() => openDrillDown("Completed Last Month (Done)", doneOnly.filter((i) => { if (!i.completedAt) return false; const d = new Date(i.completedAt); return d >= lastMS && d <= lastME; }))} />
             </div>
 
