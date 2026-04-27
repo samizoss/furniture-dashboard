@@ -26,6 +26,15 @@ const QUEUE_CONFIG = {
   triage: { color: "#64748b", short: "Triage (Unqueued)", icon: "○" },
 };
 
+const QUEUE_INFO = {
+  "Guidance Queue": "Open issues currently labeled with the Guidance Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Support Queue": "Open issues currently labeled with the Support Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "COE Queue": "Open issues currently labeled with the COE Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Admin Queue": "Open issues currently labeled with the Admin Queue label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  "Sorting Hat": "Open issues currently labeled with the Sorting Hat label. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+  triage: "Open issues with no queue label assigned yet. Excludes all closed statuses (Done, Merged, Cancelled, Parking Lot, Roadmap).",
+};
+
 const DEPT_CONFIG = {
   "Leadership": { color: "#f472b6", short: "Leadership" },
   "Operations": { color: "#38bdf8", short: "Operations" },
@@ -1022,6 +1031,7 @@ export default function FurnitureBankDashboard() {
                   color={QUEUE_CONFIG[key]?.color}
                   small
                   onClick={() => drillQueue(QUEUE_CONFIG[key]?.short || key, key)}
+                  info={QUEUE_INFO[key]}
                 />
               ))}
             </div>
