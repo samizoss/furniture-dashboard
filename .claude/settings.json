@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(\"/c/Users/samiz/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir /c/Users/samiz/furniture-dashboard)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm run *)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" diff --stat 8235052..225d16a)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" log --oneline 8235052..225d16a)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" diff 8235052..225d16a -- src/FurnitureBankDashboard.jsx)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" branch --show-current)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" log --oneline -5)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" status --short)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" diff --stat 3b8c285..3692172)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" diff 3b8c285..3692172)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" show e309531 --stat)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" show e309531)",
+      "Bash(git -C \"C:/Users/samiz/furniture-dashboard\" diff --stat 3692172..e309531)",
+      "Bash(git merge --no-ff feature/statcard-info-creator-diagnostic -m ' *)",
+      "Bash(git push *)",
+      "mcp__claude_ai_Linear__list_teams",
+      "mcp__claude_ai_Linear__list_issue_statuses"
+    ]
+  }
+}
